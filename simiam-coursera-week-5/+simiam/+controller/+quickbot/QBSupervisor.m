@@ -58,8 +58,11 @@ classdef QBSupervisor < simiam.controller.Supervisor
             
             % set the initial controller
             obj.current_controller = obj.controllers{5};
-            obj.current_state = 5;
             
+ %ATENCION ESTADO DE COMIENZO PARA BLENDING = 5
+            %obj.current_state = 5;
+ %ATENCION ESTADO DE COMINZO PARA HARD SWITCH
+            obj.current_state = 3;
             % generate the set of states
             for i = 1:length(obj.controllers)
                 obj.states{i} = struct('state', obj.controllers{i}.type, ...
@@ -82,13 +85,16 @@ classdef QBSupervisor < simiam.controller.Supervisor
             obj.prev_ticks = struct('left', 0, 'right', 0);
             
             obj.theta_d     = pi/4;
-            obj.v           = 0.15;
-            obj.goal        = [-1, 1];
+            obj.v           = 0.1;
+            obj.goal        = [-1, -1];
             obj.d_stop      = 0.05;
             obj.d_at_obs    = 0.25;                
-            obj.d_unsafe    = 0.10;
-            
-            obj.is_blending = true;
+            obj.d_unsafe    = 0.15;
+
+%ATENCION COMENTADO PARA EL CONTROLADOR SWITCH
+%DESCOMENTAR EN CASO DE CONTROLADOR BLENDING
+
+            obj.is_blending = false;%true;
             
             obj.p = simiam.util.Plotter();
             obj.current_controller.p = obj.p;
@@ -123,11 +129,41 @@ classdef QBSupervisor < simiam.controller.Supervisor
             else
                 %% START CODE BLOCK %%
                 
-                obj.switch_to_state('stop');
+                %obj.switch_to_state('stop');
+                
+                if(obj.current_state == 3)
+                    if(obj.check_event('at_goal'))
+                        obj.switch_to_state('stop');
+                    elseif(obj.check_event('at_obstacle'))
+                        obj.switch_to_state('ao_and_gtg');
+                    else
+                        obj.switch_to_state('go_to_goal'); 
+                    end
+                end 
+                if(obj.current_state == 5)
+                    if(obj.check_event('at_goal'))
+                        obj.switch_to_state('stop');
+                    elseif(obj.check_event('unsafe'))
+                        obj.switch_to_state('avoid_obstacles');
+                    elseif (obj.check_event('obstacle_cleared'))
+                        obj.switch_to_state('go_to_goal');
+                    else    
+                        obj.switch_to_state('ao_and_gtg');
+                    end
+                end 
+                if(obj.current_state == 4)
+                    if(obj.check_event('at_goal'))
+                        obj.switch_to_state('stop');
+                    elseif(obj.check_event('obstacle_cleared'))
+                        obj.switch_to_state('go_to_goal');
+                    else    
+                        obj.switch_to_state('avoid_obstacles');
+                    end
+                end
                 
                 %% END CODE BLOCK %%
             end
-            
+                        
             outputs = obj.current_controller.execute(obj.robot, obj.state_estimate, inputs, dt);
                 
             [vel_r, vel_l] = obj.ensure_w(obj.robot, outputs.v, outputs.w);
@@ -340,7 +376,7 @@ classdef QBSupervisor < simiam.controller.Supervisor
             theta_new = theta + theta_dt;
             x_new = x + x_dt;
             y_new = y + y_dt;                           
-            fprintf('Estimated pose (x,y,theta): (%0.3g,%0.3g,%0.3g)\n', x_new, y_new, theta_new);
+%            fprintf('Estimated pose (x,y,theta): (%0.3g,%0.3g,%0.3g)\n', x_new, y_new, theta_new);
             
             % Save the wheel encoder ticks for the next estimate
             obj.prev_ticks.right = right_ticks;
