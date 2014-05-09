@@ -69,7 +69,12 @@ classdef GoToGoal < simiam.controller.Controller
             [x, y, theta] = state_estimate.unpack();
             
             % Compute the v,w that will get you to the goal
-            v = inputs.v;
+ %Control de la velocidad v de acuerdo a la posicion del robot
+            %v = inputs.v;
+            u_gtg = [x_g-x; y_g-y];
+            kpv = 1;
+            v = kpv * sqrt((u_gtg(1,1))^2 + (u_gtg(2,1))^2);
+        
             
             % 1. Calculate the heading (angle) to the goal.
             

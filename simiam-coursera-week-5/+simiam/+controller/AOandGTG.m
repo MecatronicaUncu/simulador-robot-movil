@@ -71,9 +71,15 @@ classdef AOandGTG < simiam.controller.Controller
             u_gtg = [x_g-x; y_g-y];
             
             %% START CODE BLOCK %%
+            %Proportional control of v
+            
+            
             
             % 3. Blend the two vectors
+            alpha = 0.85;
+            
             u_ao_gtg = zeros(2,1);
+            u_ao_gtg = alpha*(u_ao/norm(u_ao)) + (1-alpha)*(u_gtg/norm(u_gtg));
             
             %% END CODE BLOCK %%
             
@@ -89,6 +95,8 @@ classdef AOandGTG < simiam.controller.Controller
               
             % PID control on w
             v = inputs.v;
+            %kpv = 0.8;
+            %v = kpv * sqrt((u_gtg(1,1))^2 + (u_gtg(2,1))^2);
             w = obj.Kp*e_P + obj.Ki*e_I + obj.Kd*e_D;
             
             % Save errors for next time step
